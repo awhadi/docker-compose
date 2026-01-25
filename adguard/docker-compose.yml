@@ -1,0 +1,34 @@
+services:
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    restart: unless-stopped
+    networks:
+      - net
+    volumes:
+      - adguard_work:/opt/adguardhome/work
+      - adguard_conf:/opt/adguardhome/conf
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+       - "53:53/tcp"                         # DNS over TCP
+       - "53:53/udp"                         # DNS over UDP
+      #- "67:67/udp"                         # DHCP over UDP (optional, if using AdGuard as DHCP server)
+       - "81:81/tcp"                         # HTTP for web UI
+       - "4443:443/tcp"                       # HTTPS for web UI
+       - "3000:3000/tcp" 
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "adguard"
+volumes:
+  adguard_conf:
+  adguard_work:
+networks:
+  net:
+    driver: bridge

@@ -1,0 +1,72 @@
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx_proxy_manager
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '80:80'     # HTTP
+      - '82:81'     # Nginx Proxy Manager Admin interface
+      - '443:443'   # HTTPS
+    environment:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "${NPM_DB_USER}"
+      DB_MYSQL_PASSWORD: "${NPM_DB_PASSWORD}"
+      DB_MYSQL_NAME: "${NPM_DB_NAME}"
+    volumes:
+      - /var/npm/data:/data
+      - /var/npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:81 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "nginx_proxy_manager"
+
+  db:
+    image: mariadb:latest
+    container_name: npm_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${NPM_DB_NAME}"
+      MYSQL_USER: "${NPM_DB_USER}"
+      MYSQL_PASSWORD: "${NPM_DB_PASSWORD}"
+      TZ: "${TZ}"
+    networks:
+      - network
+    volumes:
+      - npm_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${NPM_DB_USER} -p${NPM_DB_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "npm-db"
+
+volumes:
+  npm_db_data:
+    driver: local
+
+networks:
+  network:
+    driver: bridge

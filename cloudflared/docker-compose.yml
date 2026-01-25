@@ -1,0 +1,35 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    restart: unless-stopped
+
+    networks:
+      - net
+
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    cap_drop: 
+      - ALL #Drop all Linux capabilities
+    user: "10001:10001"
+
+    healthcheck:
+      test: ["CMD", "cloudflared", "--version"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "cloudflared"
+
+networks:
+  net:
+    driver: bridge

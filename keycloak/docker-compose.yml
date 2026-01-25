@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: keycloak_postgres
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ}
+    networks:
+      - internal_net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "keycloak-db"
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "8080"
+    command:
+      - start
+      - --hostname=${KC_HOSTNAME}
+      - --hostname-strict=true
+      - --proxy=edge
+      - --http-port=8080
+    environment:
+      # Database configuration
+      KC_DB: ${KC_DB}
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+
+      # temp Admin credentials
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+
+      # Hostname and proxy settings
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_PROXY: edge
+      KC_HTTP_ENABLED: true
+      KC_HTTP_PORT: 8080
+
+      # Monitoring and logging
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: ${KC_METRICS_ENABLED}
+      KC_LOG_LEVEL: ${KC_LOG_LEVEL}
+
+      # System settings
+      TZ: ${TZ}
+      KC_RUN_IN_CONTAINER: "true"
+      LANG: en_US.UTF-8
+
+      KC_CACHE: local
+      KC_TRANSACTION_XA_ENABLED: "false"
+      KC_HOSTNAME_STRICT_HTTPS: true
+    volumes:
+      - data:/opt/keycloak/data
+      - ./themes:/opt/keycloak/themes:ro
+    networks:
+      - internal_net
+      - cloudflared_net
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+        tag: "keycloak"
+volumes:
+  postgres_data:
+    driver: local
+  data:
+    driver: local
+networks:
+  internal_net:
+    internal: true
+    driver: bridge
+  cloudflared_net:
+    external: true
+    name: cloudflared_net
