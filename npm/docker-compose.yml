@@ -17,10 +17,10 @@ services:
       DB_MYSQL_PASSWORD: "${NPM_DB_PASSWORD}"
       DB_MYSQL_NAME: "${NPM_DB_NAME}"
     volumes:
-      - /var/npm/data:/data
-      - /var/npm/letsencrypt:/etc/letsencrypt
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
     networks:
-      - network
+      - net
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:81 || exit 1"]
       interval: 30s
@@ -46,11 +46,11 @@ services:
       MYSQL_PASSWORD: "${NPM_DB_PASSWORD}"
       TZ: "${TZ}"
     networks:
-      - network
+      - net
     volumes:
-      - npm_db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${NPM_DB_USER} -p${NPM_DB_PASSWORD}"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -64,9 +64,11 @@ services:
         tag: "npm-db"
 
 volumes:
-  npm_db_data:
+  npm_data:
+  npm_letsencrypt:
+  db_data:
     driver: local
 
 networks:
-  network:
+  net:
     driver: bridge

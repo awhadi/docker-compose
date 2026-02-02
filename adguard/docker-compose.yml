@@ -6,8 +6,8 @@ services:
     networks:
       - net
     volumes:
-      - adguard_work:/opt/adguardhome/work
-      - adguard_conf:/opt/adguardhome/conf
+      - work:/opt/adguardhome/work
+      - conf:/opt/adguardhome/conf
     environment:
       - TZ=Europe/Berlin
     ports:
@@ -27,8 +27,8 @@ services:
         compress: "true"
         tag: "adguard"
 volumes:
-  adguard_conf:
-  adguard_work:
+  conf:
+  work:
 networks:
   net:
     driver: bridge
