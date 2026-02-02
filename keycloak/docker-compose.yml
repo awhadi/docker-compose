@@ -51,7 +51,7 @@ services:
     command:
       - start
       - --hostname=${KC_HOSTNAME}
-      - --hostname-strict=true
+      - --hostname-strict=false
       - --proxy=edge
       - --http-port=8080
     environment:
@@ -89,7 +89,7 @@ services:
       - ./themes:/opt/keycloak/themes:ro
     networks:
       - internal_net
-      - cloudflared_net
+      - external_net
     # healthcheck:
     #   test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
     #   interval: 30s
@@ -108,10 +108,12 @@ volumes:
     driver: local
   data:
     driver: local
+
 networks:
   internal_net:
     internal: true
     driver: bridge
-  cloudflared_net:
+
+  external_net:
     external: true
-    name: cloudflared_net
+    name: ${EXTERNAL_NET}
