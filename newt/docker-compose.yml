@@ -32,3 +32,6 @@ services:
 networks:
   net:
     driver: bridge
+  newt_net:
+    external: true
+    name: newt_net
