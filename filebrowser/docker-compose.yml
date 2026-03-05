@@ -5,11 +5,11 @@ services:
     restart: unless-stopped
     ports:
       - "8090:80"
-    user: "1000:1000"
+    user: "1000:1001"
     environment:
       - FB_BASEURL=/filebrowser
     volumes:
-      - /opt/tomcat:/srv/opt
+      - /opt/tomcat:/srv/root
       - filebrowser_database:/database
       - /srv/docker-data/filebrowser/settings/:/config
 
