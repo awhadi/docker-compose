@@ -6,11 +6,13 @@ services:
     ports:
       - "8090:80"
     user: "1000:1000"
+    environment:
+      - FB_BASEURL=/filebrowser
     volumes:
-      - /opt:/srv/opt
+      - /opt/tomcat:/srv/opt
       - filebrowser_database:/database
-      - filebrowser_config:/config
+      - /srv/docker-data/filebrowser/settings/:/config
 
 volumes:
   filebrowser_database:
-  filebrowser_config:
+  #filebrowser_config:
